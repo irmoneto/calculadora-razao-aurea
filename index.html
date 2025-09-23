@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora da Razão Áurea do Pé</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- === PWA MANIFEST E META TAGS === -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ca8a04">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Razão Áurea Pé">
+  <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .result-container {
+      display: none;
+    }
+    .step-container {
+      display: none;
+    }
+    .active-block {
+        display: block;
+    }
+    .custom-cursor {
+        cursor: crosshair;
+    }
+    .bg-animation {
+        background-color: #fef3c7;
+        background-image: linear-gradient(135deg, #fef3c7 0%, #fef9e9 100%);
+    }
+    .result-perfect {
+        color: #ca8a04;
+    }
+    .result-very-close {
+        color: #eab308;
+    }
+    .result-close {
+        color: #f97316;
+    }
+    .result-far {
+        color: #ef4444;
+    }
+    .progress-bar-perfect {
+        background-color: #ca8a04;
+    }
+    .progress-bar-very-close {
+        background-color: #eab308;
+    }
+    .progress-bar-close {
+        color: #f97316;
+    }
+    .progress-bar-far {
+        background-color: #ef4444;
+    }
+  </style>
+</head>
+<body class="bg-animation min-h-screen p-4 sm:p-8 text-gray-800 flex items-center justify-center">
+
+  <div class="max-w-4xl w-full mx-auto">
+    <!-- Título do App -->
+    <header class="text-center mb-6 sm:mb-10">
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-2">Calculadora da Razão Áurea do Pé</h1>
+      <p class="text-base sm:text-xl text-gray-600">Descubra a proporção do seu pé usando a Razão Áurea (1.618)</p>
+    </header>
+    
+    <!-- Bloco de Upload de Imagem -->
+    <div id="upload-block" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg border-2 border-dashed border-gray-300 text-center transition-all duration-300 active-block">
+      <div class="mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+      </div>
+      <h2 class="text-xl sm:text-2xl font-semibold mb-2">Faça o upload de uma foto do seu pé</h2>
+      <p class="text-gray-500 mb-6">Certifique-se de que a foto seja clara, de boa qualidade, tirada de cima e de frente.</p>
+      <label for="image-upload" class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-3 px-8 rounded-full font-bold shadow-lg hover:from-yellow-600 hover:to-yellow-700 cursor-pointer transition-transform duration-200 transform hover:scale-105">
+        Escolher Foto
+        <input type="file" id="image-upload" accept="image/*" class="hidden">
+      </label>
+    </div>
+    
+    <!-- Bloco de Medição (visível após o upload) -->
+    <div id="measurement-block" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg transition-all duration-300 step-container">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Marque os Pontos</h2>
+            <button id="redo-button" class="flex items-center gap-2 bg-gray-200 text-gray-700 py-2 px-4 rounded-full font-medium hover:bg-gray-300 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2.5 16a10 10 0 0 1 18.5-4 10.38 10.38 0 0 1 1.35-2.1l-1.72-1.71"/><path d="M21.5 8a10 10 0 0 1-18.5 4 10.38 10.38 0 0 1 1.35-2.1l1.72 1.71"/></svg>
+                Refazer Marcações
+            </button>
+        </div>
+      <p id="instruction" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-4 rounded-md font-medium"></p>
+      
+      <div class="relative bg-gray-50 rounded-lg overflow-hidden border-2 border-gray-300">
+        <canvas id="imageCanvas" class="w-full h-auto custom-cursor"></canvas>
+      </div>
+      
+      <div id="progress-container" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+      
+      <button id="calculate-button" class="mt-4 w-full bg-yellow-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-yellow-600 transition-colors hidden">Calcular Razão Áurea</button>
+    </div>
+    
+    <!-- Bloco de Resultado (visível após o cálculo) -->
+    <div id="result-block" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg border-2 border-yellow-300 transition-all duration-300 result-container">
+      <div class="flex flex-col sm:flex-row gap-8">
+        <div class="flex-1">
+          <img id="result-image" src="" alt="Foto do Pé" class="rounded-lg shadow-md mb-4 w-full h-auto">
+        </div>
+        <div class="flex-1">
+          <div class="text-center">
+            <h2 class="text-xl sm:text-2xl font-bold mb-2">Resultado da Razão Áurea</h2>
+            <div id="result-ratio" class="text-5xl font-extrabold result-perfect mb-4"></div>
+            <div id="result-text" class="text-xl font-semibold mb-6"></div>
+          </div>
+          
+          <div class="space-y-4 text-lg">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Razão Calculada:</span>
+              <span id="calculated-ratio" class="font-bold"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Medida do Segundo Dedo (pixels):</span>
+              <span id="toe-length" class="font-bold"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Medida do Peito do Pé (pixels):</span>
+              <span id="foot-length" class="font-bold"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Razão Áurea Ideal:</span>
+              <span class="font-bold text-yellow-600">1.618</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Diferença para o Ideal:</span>
+              <span id="difference" class="font-bold"></span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Dentro de ±5% do Ideal:</span>
+                <span id="is-close-to-ideal" class="font-bold"></span>
+            </div>
+          </div>
+          
+          <div class="mt-8">
+            <p class="text-center text-sm text-gray-500 mb-2">Proximidade com a Razão Ideal</p>
+            <div class="relative w-full h-3 bg-gray-200 rounded-full">
+                <div id="progress-bar" class="absolute h-3 rounded-full transition-all duration-500"></div>
+            </div>
+          </div>
+          <div id="save-message" class="text-center mt-4 text-sm font-semibold"></div>
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-4 mt-4">
+        <button id="save-button" class="flex-1 bg-green-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-600 transition-colors">Salvar Resultado</button>
+        <button id="new-calculation-button" class="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-colors">Novo Cálculo</button>
+        <button id="redo-from-result-button" class="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors">Refazer Marcações</button>
+      </div>
+    </div>
+    
+    <!-- Painel Educativo e Instruções -->
+    <div class="mt-8 bg-white p-6 rounded-xl shadow-lg">
+      <h3 class="text-xl font-bold text-gray-800 mb-4">Como usar</h3>
+      <ol class="list-decimal list-inside text-gray-700 space-y-2">
+        <li>Faça o upload de uma foto do seu pé com boa iluminação, de cima e de frente.</li>
+        <li>Marque o <strong class="text-red-500">ponto 1</strong> na ponta do segundo dedo.</li>
+        <li>Marque o <strong class="text-red-500">ponto 2</strong> no início do segundo dedo.</li>
+        <li>Marque o <strong class="text-blue-500">ponto 3</strong> no final do peito do pé (ponto mais alto do arco, antes do calcanhar).</li>
+      </ol>
+      <p class="mt-4 text-gray-600 text-sm">A razão será calculada a partir da divisão da medida do peito do pé (distância entre o ponto 2 e 3) pela medida do segundo dedo (distância entre o ponto 1 e 2). A classificação será determinada pela proximidade com as faixas ideais.</p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const uploadBlock = document.getElementById('upload-block');
+      const measurementBlock = document.getElementById('measurement-block');
+      const resultBlock = document.getElementById('result-block');
+      const imageUpload = document.getElementById('image-upload');
+      const canvas = document.getElementById('imageCanvas');
+      const instructionText = document.getElementById('instruction');
+      const progressContainer = document.getElementById('progress-container');
+      const redoButton = document.getElementById('redo-button');
+      const redoFromResultButton = document.getElementById('redo-from-result-button');
+      const calculateButton = document.getElementById('calculate-button');
+      const saveButton = document.getElementById('save-button');
+      const newCalculationButton = document.getElementById('new-calculation-button');
+      const saveMessage = document.getElementById('save-message');
+      const toeLengthSpan = document.getElementById('toe-length');
+      const footLengthSpan = document.getElementById('foot-length');
+      const isCloseToIdealSpan = document.getElementById('is-close-to-ideal');
+      const resultImage = document.getElementById('result-image');
+      
+      const ctx = canvas.getContext('2d');
+      const goldenRatioIdeal = 1.618;
+      
+      let points = [];
+      let currentStep = 1; // Start directly with points
+      let img = new Image();
+      let imageUrl = '';
+      
+      const stepLabels = [
+        'Ponta do 2º Dedo',
+        'Início do 2º Dedo',
+        'Fim do Peito do Pé',
+      ];
+
+      function drawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        points.forEach((point, index) => {
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 8, 0, 2 * Math.PI);
+          ctx.fillStyle = index === 0 || index === 1 ? '#ef4444' : '#3b82f6';
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(index + 1, point.x, point.y + 4);
+        });
+
+        if (points.length >= 2) {
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          ctx.lineTo(points[1].x, points[1].y);
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
+        if (points.length >= 3) {
+          ctx.beginPath();
+          ctx.moveTo(points[1].x, points[1].y);
+          ctx.lineTo(points[2].x, points[2].y);
+          ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      function updateUI() {
+        if (currentStep < 4) {
+          instructionText.textContent = `Clique para marcar o ponto ${currentStep}: ${stepLabels[currentStep - 1]}`;
+          calculateButton.classList.add('hidden');
+          canvas.classList.add('custom-cursor');
+        } else {
+          instructionText.textContent = 'Marcações concluídas. Clique em "Calcular" ou "Refazer".';
+          calculateButton.classList.remove('hidden');
+          canvas.classList.remove('custom-cursor');
+        }
+        
+        progressContainer.innerHTML = '';
+        stepLabels.forEach((label, index) => {
+          const status = index < (currentStep - 1) ? 'Concluído' : index === (currentStep - 1) ? 'Atual' : 'Pendente';
+          const bgColor = index < (currentStep - 1) ? 'bg-green-100 border-green-300 text-green-800' : index === (currentStep - 1) ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'bg-gray-100 border-gray-300 text-gray-600';
+          
+          progressContainer.innerHTML += `
+            <div class="p-2 text-sm rounded-lg border text-center ${bgColor}">
+              ${index + 1}. ${label}
+            </div>
+          `;
+        });
+      }
+
+      function classifyRatio(ratio) {
+        const differencePercentage = Math.abs(ratio - goldenRatioIdeal) / goldenRatioIdeal;
+        if (differencePercentage <= 0.05) {
+            return 'Normais (Razão Áurea)';
+        }
+        if (ratio >= 3) return 'Dedos Curtos';
+        if (ratio <= 2) return 'Dedos Longos';
+
+        const midPoint = (3 + 2) / 2;
+        if (ratio > midPoint) return 'Normais para Curtos';
+        else return 'Normais para Longos';
+      }
+
+      function calculateAndDisplayResult() {
+        if (points.length < 3) return;
+        
+        const distanceD_pixels = Math.sqrt(Math.pow(points[1].x - points[0].x, 2) + Math.pow(points[1].y - points[0].y, 2));
+        const distanceP_pixels = Math.sqrt(Math.pow(points[2].x - points[1].x, 2) + Math.pow(points[2].y - points[1].y, 2));
+        
+        const toeLength = distanceD_pixels;
+        const footLength = distanceP_pixels;
+        const scaleRatio = 1;
+
+        const ratio = footLength / toeLength;
+        
+        const difference = Math.abs(ratio - goldenRatioIdeal);
+        const differencePercentage = difference / goldenRatioIdeal;
+
+        const isWithinIdealRange = differencePercentage <= 0.05;
+        
+        const resultRatio = document.getElementById('result-ratio');
+        const resultText = document.getElementById('result-text');
+        const calculatedRatio = document.getElementById('calculated-ratio');
+        const differenceText = document.getElementById('difference');
+        const progressBar = document.getElementById('progress-bar');
+        
+        calculatedRatio.textContent = ratio.toFixed(3);
+        toeLengthSpan.textContent = toeLength.toFixed(2) + ' pixels';
+        footLengthSpan.textContent = footLength.toFixed(2) + ' pixels';
+        differenceText.textContent = (differencePercentage * 100).toFixed(2) + '%';
+        isCloseToIdealSpan.textContent = isWithinIdealRange ? 'Sim' : 'Não';
+        isCloseToIdealSpan.className = `font-bold ${isWithinIdealRange ? 'text-green-600' : 'text-red-600'}`;
+        
+        const classification = classifyRatio(ratio);
+        let resultColor = '';
+        
+        if (classification === 'Normais (Razão Áurea)') {
+          resultColor = 'result-perfect';
+        } else if (classification.includes('para')) {
+          resultColor = 'result-close';
+        } else {
+          resultColor = 'result-far';
+        }
+        
+        resultRatio.textContent = ratio.toFixed(3);
+        resultRatio.className = `text-5xl font-extrabold mb-4 ${resultColor}`;
+        resultText.textContent = classification;
+        
+        const proximity = 100 - (Math.min(differencePercentage, 1) * 100);
+        
+        let progressBarColor = '';
+        if (proximity > 90) {
+            progressBarColor = 'progress-bar-perfect';
+        } else if (proximity > 30) { 
+            progressBarColor = 'progress-bar-close';
+        } else {
+            progressBarColor = 'progress-bar-far';
+        }
+
+        progressBar.style.width = `${proximity}%`;
+        progressBar.className = `absolute h-3 rounded-full transition-all duration-500 ${progressBarColor}`;
+
+        resultImage.src = imageUrl;
+
+        measurementBlock.classList.remove('active-block');
+        measurementBlock.classList.add('step-container');
+        resultBlock.classList.add('active-block');
+        resultBlock.classList.remove('result-container');
+      }
+      
+      function saveResult() {
+        const resultData = {
+          timestamp: new Date().toISOString(),
+          ratio: parseFloat(document.getElementById('calculated-ratio').textContent),
+          difference: document.getElementById('difference').textContent,
+          classification: document.getElementById('result-text').textContent,
+          toeLength: toeLengthSpan.textContent,
+          footLength: footLengthSpan.textContent
+        };
+        console.log('Resultados salvos:', resultData);
+        saveMessage.textContent = 'Resultado salvo com sucesso! Você pode ver no console.';
+        saveMessage.className = 'text-center mt-4 text-sm text-green-600 font-semibold';
+        setTimeout(() => saveMessage.textContent = '', 3000);
+      }
+
+      function resetApp() {
+        points = [];
+        currentStep = 1;
+        canvas.classList.add('custom-cursor');
+        drawCanvas();
+        updateUI();
+        resultBlock.classList.remove('active-block');
+        resultBlock.classList.add('result-container');
+        measurementBlock.classList.remove('active-block');
+        measurementBlock.classList.add('step-container');
+        uploadBlock.classList.add('active-block');
+        uploadBlock.classList.remove('step-container');
+      }
+      
+      function redoMeasurements() {
+        points = [];
+        currentStep = 1;
+        canvas.classList.add('custom-cursor');
+        drawCanvas();
+        updateUI();
+        measurementBlock.classList.remove('step-container');
+        measurementBlock.classList.add('active-block');
+        resultBlock.classList.remove('active-block');
+        resultBlock.classList.add('result-container');
+      }
+
+      imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            img.onload = () => {
+              const maxWidth = 800;
+              const maxHeight = 600;
+              let { width, height } = img;
+              
+              const aspectRatio = img.width / img.height;
+              
+              if (img.width > maxWidth || img.height > maxHeight) {
+                if (aspectRatio > 1) {
+                    width = maxWidth;
+                    height = width / aspectRatio;
+                } else {
+                    height = maxHeight;
+                    width = height * aspectRatio;
+                }
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              drawCanvas();
+              updateUI();
+              uploadBlock.classList.remove('active-block');
+              uploadBlock.classList.add('step-container');
+              measurementBlock.classList.add('active-block');
+              measurementBlock.classList.remove('step-container');
+            };
+            img.src = event.target.result;
+            imageUrl = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      canvas.addEventListener('click', (e) => {
+        if (currentStep > 3) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+        
+        points.push({ x, y });
+        currentStep++;
+        
+        drawCanvas();
+        updateUI();
+        
+        if (currentStep === 4) {
+          canvas.classList.remove('custom-cursor');
+        }
+      });
+      
+      calculateButton.addEventListener('click', calculateAndDisplayResult);
+      redoButton.addEventListener('click', redoMeasurements);
+      saveButton.addEventListener('click', saveResult);
+      newCalculationButton.addEventListener('click', resetApp);
+      redoFromResultButton.addEventListener('click', redoMeasurements);
+    });
+
+    // === SERVICE WORKER REGISTRATION ===
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(registration) {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          })
+          .catch(function(error) {
+            console.log('ServiceWorker registration failed: ', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
